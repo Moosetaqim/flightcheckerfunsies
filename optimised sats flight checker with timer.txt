@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Schedule Search - SATS Ltd</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #ffffff;
+            color: #dc2626;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #374151;
+        }
+        
+
+        .search-section {
+            padding: 30px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .search-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .search-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .search-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        .search-group input {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .search-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .results-section {
+            padding: 30px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .results-header h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+        }
+        
+        .clear-btn {
+            background: #ef4444;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .clear-btn:hover {
+            background: #dc2626;
+        }
+        
+        .flight-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .flight-card.timer-active {
+            border: 2px solid #10b981;
+            background: #f0fdf4;
+        }
+        
+        .flight-card.timer-warning {
+            border: 2px solid #ef4444;
+            background: #fef2f2;
+        }
+        
+        .flight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .flight-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2563eb;
+        }
+        
+        .airline-name {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .badge-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .flight-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .detail-item strong {
+            color: #374151;
+            min-width: 60px;
+        }
+        
+        .timer-section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .timer-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .timer-display.warning {
+            color: #ef4444;
+            font-size: 1.8rem;
+        }
+        
+        .timer-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .start-timer-btn {
+            background: #10b981;
+            color: white;
+        }
+        
+        .start-timer-btn:hover {
+            background: #059669;
+        }
+        
+        .stop-timer-btn {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .stop-timer-btn:hover {
+            background: #dc2626;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        @media (max-width: 768px) {
+            .search-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SATS Ltd</h1>
+            <p>Search through flight schedules by flight number, name, or airline</p>
+        </div>
+        
+        <div class="search-section">
+            <div class="search-controls">
+                <div class="search-group">
+                    <label for="searchQuery">Flight Number or Airline Name:</label>
+                    <input type="text" id="searchQuery" placeholder="Enter flight number (e.g., TEST123) or airline...">
+                </div>
+                <div class="search-group">
+                    <label for="daySearch">Day Search:</label>
+                    <input type="text" id="daySearch" placeholder="Enter day (e.g., Monday, Tuesday, 1,2,3...)...">
+                </div>
+            </div>
+        </div>
+        
+        <div class="results-section">
+            <div class="results-header">
+                <h2 id="resultsTitle">Flight Results (0)</h2>
+                <button class="clear-btn" onclick="clearFilters()" style="display: none;" id="clearBtn">Clear Filters</button>
+            </div>
+            <div id="results">
+                <div class="no-results">
+                    <p>Loading flight data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        let flightData = [];
+        let activeTimer = null;
+        let audioContext = null;
+        let warningOscillator = null;
+        let warningGain = null;
+        
+     const FLIGHT_DATA = [
+            {"No":1,"FSC/LCC":"FSC","Airline":"3U","Airline Name":"Sichuan Airlines","Arr Flt":"3U3909","STA":"1535","Dep Flt":"3U3910","STD":"1700","Route":"TFU-SIN-TFU","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1500"},
+            {"No":2,"FSC/LCC":"FSC","Airline":"3U","Airline Name":"Sichuan Airlines","Arr Flt":"3U3919","STA":"0240","Dep Flt":"3U3920","STD":"0340","Route":"TFU-SIN-TFU","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0200","Remarks":"ADDITIONAL FLT"},
+            {"No":3,"FSC/LCC":"LCC","Airline":"8B","Airline Name":"TransNusa","Arr Flt":"8B151","STA":"1045","Dep Flt":"8B152","STD":"1145","Route":"CKG-SIN-CKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":0,"Precision Time":15,"Band":"1000"},
+            {"No":4,"FSC/LCC":"LCC","Airline":"8B","Airline Name":"TransNusa","Arr Flt":"8B153","STA":"1440","Dep Flt":"8B154","STD":"1530","Route":"CGK-SIN-CGK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":0,"Precision Time":15,"Band":"1400","Remarks":"ADDITIONAL FLT STARTING FROM 15APR25"},
+            {"No":5,"FSC/LCC":"FSC","Airline":"9C","Airline Name":"Spring Airlines","Arr Flt":"9C8597","STA":"1510","Dep Flt":"9C8598","STD":"1610","Route":"PVG-SIN-PVG","Frequency":"1,3,5,7","Day":"Monday, Wednesday, Friday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1500"},
+            {"No":6,"FSC/LCC":"FSC","Airline":"9C","Airline Name":"Spring Airlines","Arr Flt":"9C8549","STA":"2000","Dep Flt":"9C8550","STD":"2100","Route":"PVG-SIN-PVG","Frequency":"2,4,6","Day":"Tuesday, Thursday, Saturday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2000"},
+            {"No":7,"FSC/LCC":"FSC","Airline":"AC","Airline Name":"Air Canada","Arr Flt":"AC19","STA":"0705","Dep Flt":"AC20","STD":"0910","Route":"YVR-SIN-YVR","Frequency":"2,4,6,7","Day":"Tuesday, Thursday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"0700"},
+            {"No":8,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI346","STA":"0745","Dep Flt":"AI347","STD":"0845","Route":"MAA-SIN-BOM","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A32N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0700","Remarks":"STD 0020HR FROM 26OCT25"},
+            {"No":9,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI2380","STA":"0730","Dep Flt":"AI2381","STD":"0900","Route":"DEL-SIN-DEL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B788","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"0700","Remarks":"AI2381/30MAR STD 0835HR"},
+            {"No":10,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI2392","STA":"0815","Dep Flt":"AI2393","STD":"0915","Route":"BLR-SIN-BLR","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A32N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0800","Remarks":"CANX 21JUN25-15AUG25"},
+            {"No":11,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI2105","STA":"0915","Dep Flt":"AI2106","STD":"1030","Route":"BOM-SIN-BOM","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320J","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0900"},
+            {"No":12,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI2111","STA":"1040","Dep Flt":"AI2110","STD":"1155","Route":"PNQ-SIN-PNQ","Frequency":"1,3,4,5,7","Day":"Monday, Wednesday, Thursday, Friday, Sunday","AC Type":"A320J","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1000","Remarks":"CANX FOR 22JUN25-24OCT26"},
+            {"No":13,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI2107","STA":"1830","Dep Flt":"AI2108","STD":"1940","Route":"BOM-SIN-BOM","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320J","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1800"},
+            {"No":14,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI2115","STA":"1930","Dep Flt":"AI2116","STD":"2030","Route":"DEL-SIN-DEL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320J","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1900"},
+            {"No":15,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI2382","STA":"2145","Dep Flt":"AI2383","STD":"2300","Route":"DEL-SIN-DEL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A32N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2100"},
+            {"No":16,"FSC/LCC":"FSC","Airline":"AI","Airline Name":"Air India","Arr Flt":"AI348","STA":"1235","Dep Flt":"AI349","STD":"1335","Route":"MAA-SIN-MAA","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"NB","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1200","Remarks":"01AUG-26OCT"},
+            {"No":17,"FSC/LCC":"FSC","Airline":"BA","Airline Name":"British Airways","Arr Flt":"BA11","STA":"1605","Dep Flt":"BA12","STD":"2320","Route":"LHR-SIN-LHR","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A380","Classification":"WB(L)","Handler":"Aventa","Required Number of Teams":3,"Precision Time":60,"Band":"1600","Remarks":"B777-300 OPS FM 02JUN25-25OCT25"},
+            {"No":18,"FSC/LCC":"FSC","Airline":"BA","Airline Name":"British Airways","Arr Flt":"BA15","STA":"1800","Dep Flt":"BA15","STD":"1940","Route":"LHR-SIN-SYD","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1800"},
+            {"No":19,"FSC/LCC":"FSC","Airline":"BA","Airline Name":"British Airways","Arr Flt":"BA16","STA":"2100","Dep Flt":"BA16","STD":"2240","Route":"SYD-SIN-LHR","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2100"},
+            {"No":20,"FSC/LCC":"FSC","Airline":"BG","Airline Name":"Biman Bangladesh","Arr Flt":"BG584","STA":"1440","Dep Flt":"BG585","STD":"1540","Route":"DAC-SIN-DAC","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738/B788","Classification":"NB/WB(S)","Handler":"Aventa","Required Number of Teams":1,"Precision Time":"","Band":"1400","Remarks":"DAY 5/7 WILL OPS NB"},
+            {"No":21,"FSC/LCC":"FSC","Airline":"BI","Airline Name":"Royal Brunei","Arr Flt":"BI421","STA":"1120","Dep Flt":"BI422","STD":"1210","Route":"BWN-SIN-BWN","Frequency":"1,3,5,6,7","Day":"Monday, Wednesday, Friday, Saturday, Sunday","AC Type":"A320N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1100"},
+            {"No":22,"FSC/LCC":"FSC","Airline":"BI","Airline Name":"Royal Brunei","Arr Flt":"BI421","STA":"1110","Dep Flt":"BI422","STD":"1210","Route":"BWN-SIN-BWN","Frequency":"2","Day":"Tuesday","AC Type":"B787","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1100"},
+            {"No":23,"FSC/LCC":"FSC","Airline":"BI","Airline Name":"Royal Brunei","Arr Flt":"BI423","STA":"2030","Dep Flt":"BI424","STD":"2130","Route":"BWN-SIN-BWN","Frequency":"4,7","Day":"Thursday, Sunday","AC Type":"B787","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"2000"},
+            {"No":24,"FSC/LCC":"FSC","Airline":"BI","Airline Name":"Royal Brunei","Arr Flt":"BI423","STA":"2035","Dep Flt":"BI424","STD":"2125","Route":"BWN-SIN-BWN","Frequency":"2,5,6","Day":"Tuesday, Friday, Saturday","AC Type":"A320N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2000"},
+            {"No":25,"FSC/LCC":"FSC","Airline":"BS","Airline Name":"US-Bangla Airlines","Arr Flt":"BS307","STA":"0440","Dep Flt":"BS308","STD":"0540","Route":"DAC-SIN-DAC","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0400"},
+            {"No":26,"FSC/LCC":"FSC","Airline":"BS","Airline Name":"US-Bangla Airlines","Arr Flt":"BS309","STA":"1425","Dep Flt":"BS310","STD":"1525","Route":"DAC-SIN-DAC","Frequency":"1,3,5,6","Day":"Monday, Wednesday, Friday, Saturday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1400","Remarks":"ADDITIONAL FLT"},
+            {"No":27,"FSC/LCC":"FSC","Airline":"CA","Airline Name":"Air China","Arr Flt":"CA975","STA":"0650","Dep Flt":"CA976","STD":"0900","Route":"PEK-SIN-PEK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0600"},
+            {"No":28,"FSC/LCC":"FSC","Airline":"CA","Airline Name":"Air China","Arr Flt":"CA403","STA":"1500","Dep Flt":"CA404","STD":"1600","Route":"TFU-SIN-TFU","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1500"},
+            {"No":29,"FSC/LCC":"FSC","Airline":"CA","Airline Name":"Air China","Arr Flt":"CA825","STA":"1600","Dep Flt":"CA826","STD":"1730","Route":"CKG-SIN-CKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1600"},
+            {"No":30,"FSC/LCC":"FSC","Airline":"CA","Airline Name":"Air China","Arr Flt":"CA449","STA":"1625","Dep Flt":"CA450","STD":"1735","Route":"PVG-SIN-PVG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1600"},
+            {"No":31,"FSC/LCC":"FSC","Airline":"CA","Airline Name":"Air China","Arr Flt":"CA969","STA":"2155","Dep Flt":"CA970","STD":"2325","Route":"PEK-SIN-PEK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B787","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2100"},
+            {"No":32,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX715","STA":"0050","Dep Flt":"CX714","STD":"0150","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"0000"},
+            {"No":33,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX659","STA":"0530","Dep Flt":"CX710","STD":"0800","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"0500"},
+            {"No":34,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX711","STA":"2035","Dep Flt":"CX658","STD":"0945","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"2000"},
+            {"No":35,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX691","STA":"1145","Dep Flt":"CX652","STD":"1245","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1100"},
+            {"No":36,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX759","STA":"1225","Dep Flt":"CX758","STD":"1325","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A350","Classification":"WB","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1200"},
+            {"No":37,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX739","STA":"1505","Dep Flt":"CX734","STD":"1605","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1500"},
+            {"No":38,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX791","STA":"1525","Dep Flt":"CX716","STD":"1800","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1500"},
+            {"No":39,"FSC/LCC":"FSC","Airline":"CX","Airline Name":"Cathay Pacific","Arr Flt":"CX635","STA":"1905","Dep Flt":"CX636","STD":"2005","Route":"HKG-SIN-HKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1900"},
+            {"No":40,"FSC/LCC":"FSC","Airline":"CZ","Airline Name":"China Southern","Arr Flt":"CZ351","STA":"2330","Dep Flt":"CZ352","STD":"0800","Route":"CAN-SIN-CAN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B38M","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2300"},
+            {"No":41,"FSC/LCC":"FSC","Airline":"CZ","Airline Name":"China Southern","Arr Flt":"CZ353","STA":"1230","Dep Flt":"CZ354","STD":"1330","Route":"CAN-SIN-CAN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B38M","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1200"},
+            {"No":42,"FSC/LCC":"FSC","Airline":"CZ","Airline Name":"China Southern","Arr Flt":"CZ8047","STA":"1940","Dep Flt":"CZ8048","STD":"2050","Route":"SZX-SIN-SZX","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B38M","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1900"},
+            {"No":43,"FSC/LCC":"FSC","Airline":"CZ","Airline Name":"China Southern","Arr Flt":"CZ3039","STA":"1650","Dep Flt":"CZ3040","STD":"1750","Route":"CAN-SIN-CAN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B38M","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1600"},
+            {"No":44,"FSC/LCC":"FSC","Airline":"CZ","Airline Name":"China Southern","Arr Flt":"CZ8489","STA":"0305","Dep Flt":"CZ8490","STD":"0355","Route":"CAN-SIN-CAN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0300"},
+            {"No":45,"FSC/LCC":"FSC","Airline":"CZ","Airline Name":"China Southern","Arr Flt":"CZ6083","STA":"0315","Dep Flt":"CZ6084","STD":"0420","Route":"CSX-SIN-CSX","Frequency":"1,3,5,7","Day":"Monday, Wednesday, Friday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0300"},
+            {"No":46,"FSC/LCC":"FSC","Airline":"ET","Airline Name":"Ethiopian Airlines","Arr Flt":"ET638","STA":"1450","Dep Flt":"ET638","STD":"1550","Route":"ADD-SIN-KUL","Frequency":"2,4,5,7","Day":"Tuesday, Thursday, Friday, Sunday","AC Type":"B788/B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1400","Remarks":"ADDITIONAL FLT STARTING FROM 30JUN25 FOR DAY 6"},
+            {"No":47,"FSC/LCC":"FSC","Airline":"ET","Airline Name":"Ethiopian Airlines","Arr Flt":"ET639","STA":"0035","Dep Flt":"ET639","STD":"0200","Route":"KUL-SIN-ADD","Frequency":"1,3,5,6","Day":"Monday, Wednesday, Friday, Saturday","AC Type":"B788/B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"0000","Remarks":"ADDITIONAL FLT STARTING FROM 30JUN25 FOR DAY 7"},
+            {"No":48,"FSC/LCC":"FSC","Airline":"FJ","Airline Name":"Fiji Airways","Arr Flt":"FJ363","STA":"0455","Dep Flt":"FJ362","STD":"1340","Route":"NAN-SIN-NAN","Frequency":"4","Day":"Thursday","AC Type":"A332","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0400"},
+            {"No":49,"FSC/LCC":"FSC","Airline":"FJ","Airline Name":"Fiji Airways","Arr Flt":"FJ361","STA":"1800","Dep Flt":"FJ360","STD":"2055","Route":"NAN-SIN-NAN","Frequency":"6","Day":"Saturday","AC Type":"A332","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1800","Remarks":"CANX FROM 09AUG25"},
+            {"No":50,"FSC/LCC":"FSC","Airline":"GF","Airline Name":"Gulf Air","Arr Flt":"GF165","STA":"1220","Dep Flt":"GF166","STD":"2000","Route":"BAH-SIN-BAH","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1200"},
+            {"No":51,"FSC/LCC":"FSC","Airline":"GX","Airline Name":"GX Airlines","Arr Flt":"","STA":"","Dep Flt":"","STD":"","Route":"","Frequency":"","Day":"","AC Type":"","Classification":"","Handler":"","Required Number of Teams":"","Precision Time":"","Band":"","Remarks":"NIL OPS UNTIL FURTHER NOTICE"},
+            {"No":52,"FSC/LCC":"FSC","Airline":"HU","Airline Name":"Hainan Airlines","Arr Flt":"HU747","STA":"1100","Dep Flt":"HU748","STD":"1204","Route":"HAK-SIN-HAK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B73B","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1100"},
+            {"No":53,"FSC/LCC":"FSC","Airline":"HU","Airline Name":"Hainan Airlines","Arr Flt":"HU413","STA":"0345","Dep Flt":"HU414","STD":"0450","Route":"HAK-SIN-HAK","Frequency":"1,3,5,7","Day":"Monday, Wednesday, Friday, Sunday","AC Type":"B73A","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0300","Remarks":"ADDITIONAL FLT"},
+            {"No":54,"FSC/LCC":"FSC","Airline":"HU","Airline Name":"Hainan Airlines","Arr Flt":"HU7909","STA":"0345","Dep Flt":"HU7910","STD":"0450","Route":"HAK-SIN-HAK","Frequency":"2,4,6","Day":"Tuesday, Thursday, Saturday","AC Type":"B73A","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0300","Remarks":"ADDITIONAL FLT"},
+            {"No":55,"FSC/LCC":"LCC","Airline":"IX","Airline Name":"Air India Express","Arr Flt":"IX690","STA":"1025","Dep Flt":"IX689","STD":"1125","Route":"TRZ-SIN-TRZ","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1000"},
+            {"No":56,"FSC/LCC":"LCC","Airline":"IX","Airline Name":"Air India Express","Arr Flt":"IX678","STA":"1155","Dep Flt":"IX677","STD":"1300","Route":"MAA-SIN-MAA","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1100","Remarks":"CANX FROM 01AUG-25OCT25"},
+            {"No":57,"FSC/LCC":"LCC","Airline":"IX","Airline Name":"Air India Express","Arr Flt":"IX682","STA":"2325","Dep Flt":"IX681","STD":"0030","Route":"TRZ-SIN-TRZ","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2300","Remarks":"CANX FROM 05AUG-25OCT25"},
+            {"No":58,"FSC/LCC":"LCC","Airline":"JQ","Airline Name":"Jetstar Airways","Arr Flt":"JQ7","STA":"1800","Dep Flt":"JQ8","STD":"2100","Route":"MEL-SIN-MEL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B788","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1800"},
+            {"No":59,"FSC/LCC":"LCC","Airline":"JQ","Airline Name":"Jetstar Airways","Arr Flt":"JQ97","STA":"1310","Dep Flt":"JQ98","STD":"1425","Route":"MEL-SIN-MEL","Frequency":"2,4,6","Day":"Tuesday, Thursday, Saturday","AC Type":"A21N","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1200"},
+            {"No":60,"FSC/LCC":"LCC","Airline":"JQ","Airline Name":"Jetstar Airways","Arr Flt":"JQ99","STA":"0455","Dep Flt":"JQ96","STD":"0655","Route":"PER-SIN-PER","Frequency":"1,3,5","Day":"Monday, Wednesday, Friday","AC Type":"A32Q","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0400"},
+            {"No":61,"FSC/LCC":"FSC","Airline":"JQ","Airline Name":"Jetstar Airways","Arr Flt":"JQ43","STA":"1830","Dep Flt":"JQ36","STD":"1945","Route":"DPS-SIN-DPS","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A32Q","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1800"},
+            {"No":62,"FSC/LCC":"FSC","Airline":"JX","Airline Name":"Starlux Airlines","Arr Flt":"JX772","STA":"1240","Dep Flt":"JX771","STD":"1400","Route":"SIN-TPE-SIN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1200"},
+            {"No":63,"FSC/LCC":"FSC","Airline":"KE","Airline Name":"Korean Air","Arr Flt":"KE643","STA":"1955","Dep Flt":"KE644","STD":"2230","Route":"ICN-SIN-ICN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77W","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1900"},
+            {"No":64,"FSC/LCC":"FSC","Airline":"KE","Airline Name":"Korean Air","Arr Flt":"KE645","STA":"2340","Dep Flt":"KE646","STD":"0110","Route":"ICN-SIN-ICN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77I","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2300"},
+            {"No":65,"FSC/LCC":"FSC","Airline":"KE","Airline Name":"Korean Air","Arr Flt":"KE647","STA":"0500","Dep Flt":"KE648","STD":"0730","Route":"ICN-SIN-ICN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77Q","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0500","Remarks":"CANX ON 01SEP/02SEP/08SEP/09/15SEP/22SEP/23SEP"},
+            {"No":66,"FSC/LCC":"FSC","Airline":"KR","Airline Name":"Cambodia Airways","Arr Flt":"KR9755","STA":"1700","Dep Flt":"KR9756","STD":"1800","Route":"SYX-SIN-SYX","Frequency":"2,6","Day":"Tuesday, Saturday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1700"},
+            {"No":67,"FSC/LCC":"FSC","Airline":"LH","Airline Name":"Lufthansa","Arr Flt":"LH780","STA":"1625","Dep Flt":"LH781","STD":"2340","Route":"FRA-SIN-FRA","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B744","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":60,"Band":"1600","Remarks":"CHG IN FLT NMBR // START FROM 31MAR ONWARDS"},
+            {"No":68,"FSC/LCC":"FSC","Airline":"LH","Airline Name":"Lufthansa","Arr Flt":"LH768","STA":"1640","Dep Flt":"LH769","STD":"2325","Route":"MUC-SIN-MUC","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":60,"Band":"1600","Remarks":"CHG IN FLT NMBR // START FROM 31MAR ONWARDS"},
+            {"No":69,"FSC/LCC":"FSC","Airline":"LX","Airline Name":"Swiss International","Arr Flt":"LX176","STA":"1705","Dep Flt":"LX177","STD":"2320","Route":"ZRH-SIN-ZRH","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B773","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":60,"Band":"1700","Remarks":"STD 0020HR FROM 26OCT25"},
+            {"No":70,"FSC/LCC":"FSC","Airline":"MF","Airline Name":"XiamenAir","Arr Flt":"MF8675","STA":"0140","Dep Flt":"MF8676","STD":"0240","Route":"XMN-SIN-XMN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0100","Remarks":"ADDITIONAL FLT"},
+            {"No":71,"FSC/LCC":"FSC","Airline":"MF","Airline Name":"XiamenAir","Arr Flt":"MF885","STA":"2215","Dep Flt":"MF886","STD":"0855","Route":"XMN-SIN-XMN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2200"},
+            {"No":72,"FSC/LCC":"FSC","Airline":"MF","Airline Name":"XiamenAir","Arr Flt":"MF8019","STA":"1315","Dep Flt":"MF8020","STD":"1415","Route":"JJN-SIN-JJN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1300"},
+            {"No":73,"FSC/LCC":"FSC","Airline":"MF","Airline Name":"XiamenAir","Arr Flt":"MF8703","STA":"1340","Dep Flt":"MF8704","STD":"1450","Route":"HGH-SIN-HGH","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1300"},
+            {"No":74,"FSC/LCC":"FSC","Airline":"MF","Airline Name":"XiamenAir","Arr Flt":"MF865","STA":"1400","Dep Flt":"MF866","STD":"1505","Route":"FOC-SIN-FOC","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1400"},
+            {"No":75,"FSC/LCC":"FSC","Airline":"MF","Airline Name":"XiamenAir","Arr Flt":"MF851","STA":"1350","Dep Flt":"MF852","STD":"1515","Route":"XMN-SIN-XMN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1300"},
+            {"No":76,"FSC/LCC":"FSC","Airline":"MH","Airline Name":"Malaysia Airlines","Arr Flt":"MH609","STA":"0010","Dep Flt":"MH602","STD":"0620","Route":"KUL-SIN-KUL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0000"},
+            {"No":77,"FSC/LCC":"LCC","Airline":"MM","Airline Name":"Peach Aviation","Arr Flt":"MM773","STA":"0045","Dep Flt":"MM774","STD":"0215","Route":"KIX-SIN-KIX","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0000"},
+            {"No":78,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU567","STA":"1535","Dep Flt":"MU568","STD":"1635","Route":"PVG-SIN-PVG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1500"},
+            {"No":79,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU543","STA":"0525","Dep Flt":"MU546","STD":"1010","Route":"PVG-SIN-PVG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0500"},
+            {"No":80,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU565","STA":"2010","Dep Flt":"MU566","STD":"2310","Route":"PVG-SIN-PVG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"33E","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2000"},
+            {"No":81,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU545","STA":"2155","Dep Flt":"MU544","STD":"0055","Route":"PVG-SIN-PVG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"33J","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2100"},
+            {"No":82,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU769","STA":"0155","Dep Flt":"MU770","STD":"0300","Route":"HFE-SIN-HFE","Frequency":"1","Day":"Monday","AC Type":"32L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0100"},
+            {"No":83,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU769","STA":"1425","Dep Flt":"MU770","STD":"1545","Route":"HFE-SIN-HFE","Frequency":"2,5","Day":"Tuesday, Friday","AC Type":"32L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1400"},
+            {"No":84,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU5081","STA":"1140","Dep Flt":"MU5082","STD":"1240","Route":"KMG-SIN-KMG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"73L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1100"},
+            {"No":85,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU897","STA":"1425","Dep Flt":"MU898","STD":"1545","Route":"HGH-SIN-HGH","Frequency":"3,7","Day":"Wednesday, Sunday","AC Type":"32L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1400"},
+            {"No":86,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU897","STA":"0155","Dep Flt":"MU898","STD":"0300","Route":"HGH-SIN-HGH","Frequency":"2,6","Day":"Tuesday, Saturday","AC Type":"32L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0100"},
+            {"No":87,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU5031","STA":"2340","Dep Flt":"MU5032","STD":"0055","Route":"PKX-SIN-PKX","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"32L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2300"},
+            {"No":88,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU2069","STA":"1255","Dep Flt":"MU2070","STD":"1420","Route":"XIY-SIN-XIY","Frequency":"1,3,5","Day":"Monday, Wednesday, Friday","AC Type":"32L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1200"},
+            {"No":89,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU2577","STA":"1410","Dep Flt":"MU2578","STD":"1530","Route":"WUH-SIN-WUH","Frequency":"1,3,5,7","Day":"Monday, Wednesday, Friday, Sunday","AC Type":"73E","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1400","Remarks":"DAY 1 STARTING FROM 07JUL-25OCT"},
+            {"No":90,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU6049","STA":"1655","Dep Flt":"MU6050","STD":"1810","Route":"PVG-SIN-PVG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"32L","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1600"},
+            {"No":91,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU7261","STA":"0100","Dep Flt":"MU7262","STD":"0200","Route":"XIY-SIN-XIY","Frequency":"5,7","Day":"Friday, Sunday","AC Type":"A32","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0100"},
+            {"No":92,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU9647","STA":"0130","Dep Flt":"MU9648","STD":"0230","Route":"KMG-SIN-KMG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"73E","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0100"},
+            {"No":93,"FSC/LCC":"FSC","Airline":"MU","Airline Name":"China Eastern","Arr Flt":"MU849","STA":"1255","Dep Flt":"MU850","STD":"1355","Route":"NGB-SIN-NGB","Frequency":"2,4,6","Day":"Tuesday, Thursday, Saturday","AC Type":"320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1200"},
+            {"No":94,"FSC/LCC":"FSC","Airline":"NH","Airline Name":"All Nippon Airways","Arr Flt":"NH801","STA":"0045","Dep Flt":"NH802","STD":"0615","Route":"NRT-SIN-NRT","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":60,"Band":"0000"},
+            {"No":95,"FSC/LCC":"FSC","Airline":"NH","Airline Name":"All Nippon Airways","Arr Flt":"NH843","STA":"0640","Dep Flt":"NH842","STD":"1105","Route":"HND-SIN-HND","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":60,"Band":"0600"},
+            {"No":96,"FSC/LCC":"FSC","Airline":"NH","Airline Name":"All Nippon Airways","Arr Flt":"NH841","STA":"1715","Dep Flt":"NH844","STD":"2210","Route":"HND-SIN-HND","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":60,"Band":"1700"},
+            {"No":97,"FSC/LCC":"LCC","Airline":"NQ","Airline Name":"Air Japan","Arr Flt":"NQ3","STA":"2345","Dep Flt":"NQ4","STD":"0055","Route":"NRT-SIN-NRT","Frequency":"1,4,5,6,7","Day":"Monday, Thursday, Friday, Saturday, Sunday","AC Type":"B788","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2300"},
+            {"No":99,"FSC/LCC":"FSC","Airline":"NX","Airline Name":"Air Macau","Arr Flt":"NX908","STA":"1600","Dep Flt":"NX907","STD":"1705","Route":"MFM-SIN-MFM","Frequency":"1,3,5,7","Day":"Monday, Wednesday, Friday, Sunday","AC Type":"A321","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1600","Remarks":"DAILY FLT BETWEEN 01JUL-31AUG25"},
+            {"No":100,"FSC/LCC":"FSC","Airline":"NZ","Airline Name":"Air New Zealand","Arr Flt":"NZ282","STA":"0645","Dep Flt":"NZ281","STD":"0835","Route":"AKL-SIN-AKL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77W","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":50,"Band":"0600"},
+            {"No":101,"FSC/LCC":"FSC","Airline":"NZ","Airline Name":"Air New Zealand","Arr Flt":"NZ284","STA":"1650","Dep Flt":"NZ283","STD":"1850","Route":"AKL-SIN-AKL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77W","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":50,"Band":"1600"},
+            {"No":102,"FSC/LCC":"FSC","Airline":"OQ","Airline Name":"Chongqing Airlines","Arr Flt":"OQ2095","STA":"1325","Dep Flt":"OQ2096","STD":"1435","Route":"CKG-SIN-CKG","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"NB","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1300"},
+            {"No":103,"FSC/LCC":"FSC","Airline":"OZ","Airline Name":"Asiana Airlines","Arr Flt":"OZ751","STA":"2130","Dep Flt":"OZ752","STD":"2250","Route":"ICN-SIN-ICN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2100"},
+            {"No":104,"FSC/LCC":"FSC","Airline":"PR","Airline Name":"Philippine Airlines","Arr Flt":"PR511","STA":"0925","Dep Flt":"PR502","STD":"1025","Route":"MNL-SIN-MNL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321C","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0900","Remarks":"CANX - 01/02/08/09/15/16/23AUG // 02/04/09/11/16/18SEP// 05/12/91OCT"},
+            {"No":105,"FSC/LCC":"FSC","Airline":"PR","Airline Name":"Philippine Airlines","Arr Flt":"PR507","STA":"1320","Dep Flt":"PR508","STD":"1435","Route":"MNL-SIN-MNL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321C/A333","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1300"},
+            {"No":106,"FSC/LCC":"FSC","Airline":"PR","Airline Name":"Philippine Airlines","Arr Flt":"PR501","STA":"1915","Dep Flt":"PR512","STD":"2015","Route":"MNL-SIN-MNL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321C","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1900"},
+            {"No":107,"FSC/LCC":"FSC","Airline":"PR","Airline Name":"Philippine Airlines","Arr Flt":"PR509","STA":"2320","Dep Flt":"PR510","STD":"0020","Route":"MNL-SIN-MNL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321C","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2300"},
+            {"No":108,"FSC/LCC":"FSC","Airline":"PX","Airline Name":"Air Niugini","Arr Flt":"PX392","STA":"1930","Dep Flt":"PX393","STD":"2040","Route":"POM-SIN-POM","Frequency":"1,4,6","Day":"Monday, Thursday, Saturday","AC Type":"B763","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1900"},
+            {"No":109,"FSC/LCC":"FSC","Airline":"PX","Airline Name":"Air Niugini","Arr Flt":"PX392","STA":"1930","Dep Flt":"PX393","STD":"2040","Route":"POM-SIN-POM","Frequency":"3","Day":"Wednesday","AC Type":"B737","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1900"},
+            {"No":110,"FSC/LCC":"FSC","Airline":"QR","Airline Name":"Qatar Airways","Arr Flt":"QR942","STA":"0900","Dep Flt":"QR943","STD":"1030","Route":"DOH-SIN-DOH","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0900"},
+            {"No":111,"FSC/LCC":"FSC","Airline":"QR","Airline Name":"Qatar Airways","Arr Flt":"QR944","STA":"2100","Dep Flt":"QR945","STD":"0310","Route":"DOH-SIN-DOH","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2100"},
+            {"No":112,"FSC/LCC":"FSC","Airline":"QR","Airline Name":"Qatar Airways","Arr Flt":"QR948","STA":"1545","Dep Flt":"QR947","STD":"1845","Route":"DOH-SIN-DOH","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77W","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1500"},
+            {"No":113,"FSC/LCC":"FSC","Airline":"SC","Airline Name":"Shandong Airlines","Arr Flt":"SC8061","STA":"2350","Dep Flt":"SC8062","STD":"0055","Route":"TNA-SIN-TNA","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2300","Remarks":"27APR ONWARDS DAY 1357"},
+            {"No":114,"FSC/LCC":"FSC","Airline":"SV","Airline Name":"Saudia","Arr Flt":"SV856","STA":"1545","Dep Flt":"SV856","STD":"1715","Route":"JED-SIN-DPS","Frequency":"1,3,5","Day":"Monday, Wednesday, Friday","AC Type":"B787","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1500","Remarks":"DAY 3 OPT STA 1545 STD 1715 (NO CHANGE TO OTHER OPS)"},
+            {"No":115,"FSC/LCC":"FSC","Airline":"SV","Airline Name":"Saudia","Arr Flt":"SV857","STA":"0045","Dep Flt":"SV857","STD":"0230","Route":"DPS-SIN-JED","Frequency":"2,4,6","Day":"Tuesday, Thursday, Saturday","AC Type":"B787","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"0000","Remarks":"DAY 4 OPT STA 0215 STD 0345 (DIFF TIMINGS AS COMPARED TO OTHER DAY OF OPS)"},
+            {"No":116,"FSC/LCC":"FSC","Airline":"TG","Airline Name":"Thai Airways","Arr Flt":"TG403","STA":"1115","Dep Flt":"TG404","STD":"1225","Route":"BKK-SIN-BKK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1100"},
+            {"No":117,"FSC/LCC":"FSC","Airline":"TG","Airline Name":"Thai Airways","Arr Flt":"TG413","STA":"1430","Dep Flt":"TG414","STD":"1555","Route":"BKK-SIN-BKK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B787","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1400"},
+            {"No":118,"FSC/LCC":"FSC","Airline":"TG","Airline Name":"Thai Airways","Arr Flt":"TG407","STA":"1705","Dep Flt":"TG408","STD":"1815","Route":"BKK-SIN-BKK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B777","Classification":"WB(M)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1700","Remarks":"30MAR-14MAY25 WILL BE OPT BY B777. A320 NB OPS AFTER 14MAY25"},
+            {"No":119,"FSC/LCC":"FSC","Airline":"TG","Airline Name":"Thai Airways","Arr Flt":"TG409","STA":"1940","Dep Flt":"TG410","STD":"2050","Route":"BKK-SIN-BKK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A359","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"1900"},
+            {"No":120,"FSC/LCC":"FSC","Airline":"TG","Airline Name":"Thai Airways","Arr Flt":"TG401","STA":"2230","Dep Flt":"TG402","STD":"0800+1","Route":"BKK-SIN-BKK","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B787","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":20,"Band":"2200"},
+            {"No":121,"FSC/LCC":"FSC","Airline":"TK","Airline Name":"Turkish Airlines","Arr Flt":"TK208","STA":"0845","Dep Flt":"TK209","STD":"1015","Route":"IST-SIN-IST","Frequency":"2,4,5,7","Day":"Tuesday, Thursday, Friday, Sunday","AC Type":"A350","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0800"},
+            {"No":122,"FSC/LCC":"FSC","Airline":"TK","Airline Name":"Turkish Airlines","Arr Flt":"TK168","STA":"0830","Dep Flt":"TK168","STD":"1010","Route":"IST-SIN-MEL","Frequency":"1,3,6","Day":"Monday, Wednesday, Saturday","AC Type":"A350","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0800"},
+            {"No":123,"FSC/LCC":"FSC","Airline":"TK","Airline Name":"Turkish Airlines","Arr Flt":"TK169","STA":"0325","Dep Flt":"TK169","STD":"0510","Route":"MEL-SIN-IST","Frequency":"2,4,7","Day":"Tuesday, Thursday, Sunday","AC Type":"A350","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0300"},
+            {"No":124,"FSC/LCC":"LCC","Airline":"TW","Airline Name":"T'way Air","Arr Flt":"TW161","STA":"2130","Dep Flt":"TW162","STD":"2300","Route":"ICN-SIN-ICN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A333","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"2100"},
+            {"No":125,"FSC/LCC":"LCC","Airline":"TW","Airline Name":"T'way Air","Arr Flt":"TW163","STA":"0030","Dep Flt":"TW164","STD":"0210","Route":"ICN-SIN-ICN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A332","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0000","Remarks":"REDUCED FREQ 12457 FROM 15AUG, NIL FLT FROM 01SEP"},
+            {"No":126,"FSC/LCC":"LCC","Airline":"TW","Airline Name":"T'way Air","Arr Flt":"TW165","STA":"2355","Dep Flt":"TW166","STD":"0215","Route":"CJU-SIN-CJU","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"2300","Remarks":"EFFECTIVE 15AUG 12457, DAILY AFTER 01SEP25"},
+            {"No":127,"FSC/LCC":"FSC","Airline":"UA","Airline Name":"United Airlines","Arr Flt":"UA1","STA":"0645","Dep Flt":"UA2","STD":"0900","Route":"SFO-SIN-SFO","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"0600","Remarks":"24MAY25-25JUN25 STA 0615 STD 0845"},
+            {"No":128,"FSC/LCC":"FSC","Airline":"UA","Airline Name":"United Airlines","Arr Flt":"UA29","STA":"1825","Dep Flt":"UA28","STD":"2040","Route":"SFO-SIN-SFO","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":2,"Precision Time":25,"Band":"1800"},
+            {"No":129,"FSC/LCC":"FSC","Airline":"VN","Airline Name":"Vietnam Airlines","Arr Flt":"VN661","STA":"1155","Dep Flt":"VN660","STD":"1305","Route":"HAN-SIN-HAN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1100"},
+            {"No":130,"FSC/LCC":"FSC","Airline":"VN","Airline Name":"Vietnam Airlines","Arr Flt":"VN651","STA":"1210","Dep Flt":"VN650","STD":"1310","Route":"SGN-SIN-SGN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1200"},
+            {"No":131,"FSC/LCC":"FSC","Airline":"VN","Airline Name":"Vietnam Airlines","Arr Flt":"VN655","STA":"1725","Dep Flt":"VN654","STD":"1825","Route":"SGN-SIN-SGN","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A321","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1700"},
+            {"No":132,"FSC/LCC":"FSC","Airline":"ZH","Airline Name":"Shenzhen Airlines","Arr Flt":"ZH239","STA":"1155","Dep Flt":"ZH240","STD":"1255","Route":"SZX-SIN-SZX","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B738","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1100"},
+            {"No":133,"FSC/LCC":"FSC","Airline":"ZH","Airline Name":"Shenzhen Airlines","Arr Flt":"ZH229","STA":"1640","Dep Flt":"ZH230","STD":"1810","Route":"SZX-SIN-SZX","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"1600"},
+            {"No":134,"FSC/LCC":"LCC","Airline":"ZH","Airline Name":"Shenzhen Airlines","Arr Flt":"ZH227","STA":"0240","Dep Flt":"ZH227","STD":"0340","Route":"SZX-SIN-SZX","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A320","Classification":"NB","Handler":"Aventa","Required Number of Teams":1,"Precision Time":15,"Band":"0200"},
+            {"No":135,"FSC/LCC":"LCC","Airline":"ZG","Airline Name":"Zipair Tokyo","Arr Flt":"ZG53","STA":"2310","Dep Flt":"ZG54","STD":"0040","Route":"NRT-SIN-NRT","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B788","Classification":"WB(S)","Handler":"Aventa","Required Number of Teams":0,"Precision Time":15,"Band":"2300","Remarks":"ONE STAFF COLLECT RUBBISH"},
+            {"No":136,"FSC/LCC":"FSC","Airline":"BR","Airline Name":"EVA Air","Arr Flt":"BR215","STA":"1350","Dep Flt":"BR216","STD":"1510","Route":"TPE-SIN-TPE","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77W","Classification":"WB(M)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1300"},
+            {"No":137,"FSC/LCC":"FSC","Airline":"BR","Airline Name":"EVA Air","Arr Flt":"BR225","STA":"1200","Dep Flt":"BR226","STD":"1310","Route":"TPE-SIN-TPE","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B77W","Classification":"WB(M)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1200"},
+            {"No":138,"FSC/LCC":"FSC","Airline":"JL","Airline Name":"Japan Airlines","Arr Flt":"JL35","STA":"0610","Dep Flt":"JL712","STD":"0805","Route":"HND-SIN-NRT","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B76W","Classification":"WB(M)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"0600"},
+            {"No":139,"FSC/LCC":"FSC","Airline":"JL","Airline Name":"Japan Airlines","Arr Flt":"JL37","STA":"1730","Dep Flt":"JL36","STD":"2150","Route":"HND-SIN-HND","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B789","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1700"},
+            {"No":140,"FSC/LCC":"FSC","Airline":"JL","Airline Name":"Japan Airlines","Arr Flt":"JL711","STA":"0020","Dep Flt":"JL38","STD":"0155","Route":"NRT-SIN-HND","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"B76W","Classification":"WB(M)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"0000"},
+            {"No":141,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF291","STA":"1650","Dep Flt":"QF292","STD":"2100","Route":"SYD-SIN-SYD","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":30,"Band":"1600","Remarks":"N-STOP ON DAY 4 AND DEPART ON DAY 5 // A380 EFF 16JUN25"},
+            {"No":142,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF81","STA":"1650","Dep Flt":"QF84","STD":"2235","Route":"SYD-SIN-SYD","Frequency":"5","Day":"Friday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1600"},
+            {"No":143,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF35","STA":"1815","Dep Flt":"QF36","STD":"2015","Route":"MEL-SIN-MEL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1800"},
+            {"No":144,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF51","STA":"1725","Dep Flt":"QF52","STD":"2030","Route":"BNE-SIN-BNE","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1700"},
+            {"No":145,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF71","STA":"1800","Dep Flt":"QF72","STD":"1935","Route":"PER-SIN-PER","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1800"},
+            {"No":146,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF83","STA":"1915","Dep Flt":"QF84","STD":"2235","Route":"SYD-SIN-SYD","Frequency":"1,5,6","Day":"Monday, Friday, Saturday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"1900","Remarks":"DAY 4 WILL OPT AS QF82 STD 2100"},
+            {"No":147,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF37","STA":"2205","Dep Flt":"QF38","STD":"2330","Route":"MEL-SIN-MEL","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"2200"},
+            {"No":148,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF53","STA":"2135","Dep Flt":"QF54","STD":"2310","Route":"BNE-SIN-BNE","Frequency":"6,7","Day":"Saturday, Sunday","AC Type":"A330","Classification":"WB(S)","Handler":"SATS","Required Number of Teams":2,"Precision Time":25,"Band":"2100"},
+            {"No":149,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF2","STA":"1725","Dep Flt":"QF2","STD":"1930","Route":"LHR-SIN-SYD","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A380","Classification":"WB(L)","Handler":"SATS","Required Number of Teams":3,"Precision Time":25,"Band":"1700"},
+            {"No":150,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF1","STA":"2115","Dep Flt":"QF1","STD":"2325","Route":"SYD-SIN-LHR","Frequency":"1,2,3,4,5,6,7","Day":"Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday","AC Type":"A380","Classification":"WB(L)","Handler":"SATS","Required Number of Teams":3,"Precision Time":25,"Band":"2100"},
+            {"No":151,"FSC/LCC":"FSC","Airline":"QF","Airline Name":"Qantas","Arr Flt":"QF113","STA":"1815","Dep Flt":"QF114","STD":"1920","Route":"DRW-SIN-DRW","Frequency":"1,3,5,6","Day":"Monday, Wednesday, Friday, Saturday","AC Type":"B738","Classification":"NB","Handler":"SATS","Required Number of Teams":1,"Precision Time":15,"Band":"1800"},
+            {"No":152,"FSC/LCC":"TEST","Airline":"TEST","Airline Name":"TEST","Arr Flt":"TEST","STA":"TEST","Dep Flt":"TEST","STD":"TEST","Route":"TEST","Frequency":"TEST","Day":"TEST","AC Type":"TEST","Classification":"TEST","Handler":"TEST","Required Number of Teams":3,"Precision Time":3,"Band":"TEST"}
+        ];
+        
+        
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('SATSFlightDB', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('flights')) {
+                        const objectStore = db.createObjectStore('flights', { autoIncrement: true });
+                        objectStore.createIndex('airline', 'Airline', { unique: false });
+                    }
+                };
+            });
+        }
+        
+        function populateDB() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['flights'], 'readwrite');
+                const objectStore = transaction.objectStore('flights');
+                
+                const clearRequest = objectStore.clear();
+                
+                clearRequest.onsuccess = () => {
+                    FLIGHT_DATA.forEach(flight => {
+                        objectStore.add(flight);
+                    });
+                };
+                
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error);
+            });
+        }
+        
+        function loadFlights() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['flights'], 'readonly');
+                const objectStore = transaction.objectStore('flights');
+                const request = objectStore.getAll();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function initializeApp() {
+            try {
+                await initDB();
+                await populateDB();
+                flightData = await loadFlights();
+                
+                displayResults();
+                updateResultsTitle();
+            } catch (error) {
+                console.error('Database error:', error);
+                flightData = FLIGHT_DATA;
+                displayResults();
+            }
+        }
+        
+        function initAudio() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!audioContext) {
+                    audioContext = new AudioContext();
+                }
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                return true;
+            } catch (e) {
+                console.error('Audio init failed:', e);
+                return false;
+            }
+        }
+        
+        document.getElementById('searchQuery').addEventListener('input', debounce(displayResults, 300));
+        document.getElementById('daySearch').addEventListener('input', debounce(displayResults, 300));
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func(...args), wait);
+            };
+        }
+        
+        function displayResults() {
+            if (activeTimer !== null) return;
+            
+            const searchQuery = document.getElementById('searchQuery').value.toLowerCase();
+            const daySearch = document.getElementById('daySearch').value.toLowerCase();
+            
+            const filtered = flightData.filter(flight => {
+                const searchMatch = !searchQuery || 
+                    (flight['Arr Flt'] && String(flight['Arr Flt']).toLowerCase().includes(searchQuery)) ||
+                    (flight['Dep Flt'] && String(flight['Dep Flt']).toLowerCase().includes(searchQuery)) ||
+                    (flight['Airline Name'] && String(flight['Airline Name']).toLowerCase().includes(searchQuery)) ||
+                    (flight['Airline'] && String(flight['Airline']).toLowerCase().includes(searchQuery));
+                
+                const dayMatch = !daySearch || 
+                    (flight['Day'] && String(flight['Day']).toLowerCase().includes(daySearch)) ||
+                    (flight['Frequency'] && String(flight['Frequency']).toLowerCase().includes(daySearch));
+                
+                return searchMatch && dayMatch;
+            });
+            
+            const resultsContainer = document.getElementById('results');
+            
+            if (filtered.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results"><p>No flights found matching your search criteria.</p></div>';
+            } else {
+                resultsContainer.innerHTML = filtered.map((flight, index) => createFlightCard(flight, index)).join('');
+            }
+            
+            updateResultsTitle(filtered.length);
+            toggleClearButton(searchQuery || daySearch);
+        }
+        
+        function createFlightCard(flight, index) {
+            const arrFlt = flight['Arr Flt'] || '';
+            const depFlt = flight['Dep Flt'] || '';
+            const airlineCode = flight['Airline'] || '';
+            const airlineName = flight['Airline Name'] || '';
+            const sta = flight['STA'] || '';
+            const std = flight['STD'] || '';
+            const day = flight['Day'] || '';
+            const precisionTime = flight['Precision Time'] || 0;
+            const route = flight['Route'] || '';
+            
+            const primaryFlightNumber = arrFlt || depFlt || 'N/A';
+            const correspondingFlightNumber = arrFlt && depFlt ? (arrFlt ? depFlt : arrFlt) : '';
+            
+            return `
+                <div class="flight-card" id="flight-${index}">
+                    <div class="flight-header">
+                        <div>
+                            <div class="flight-number">${primaryFlightNumber}</div>
+                            <div class="airline-name">${airlineCode}${airlineName ? ' - ' + airlineName : ''}</div>
+                        </div>
+                        ${correspondingFlightNumber ? `<span class="badge-secondary">Corresponding: ${correspondingFlightNumber}</span>` : ''}
+                    </div>
+                    <div class="flight-details">
+                        ${sta ? `<div class="detail-item"><strong>STA:</strong> ${sta}</div>` : ''}
+                        ${std ? `<div class="detail-item"><strong>STD:</strong> ${std}</div>` : ''}
+                        ${day ? `<div class="detail-item"><strong>Days:</strong> ${day}</div>` : ''}
+                        ${route ? `<div class="detail-item"><strong>Route:</strong> ${route}</div>` : ''}
+                    </div>
+                    ${precisionTime > 0 ? `
+                        <div class="timer-section">
+                            <div class="timer-display" id="timer-${index}">Ready to start</div>
+                            <button class="timer-btn start-timer-btn" id="start-btn-${index}" onclick="startTimer(${index}, ${precisionTime})">Start ${precisionTime} Min Timer</button>
+                            <button class="timer-btn stop-timer-btn" id="stop-btn-${index}" onclick="stopTimer(${index})" style="display: none;">Stop Timer</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function startTimer(flightIndex, minutes) {
+            if (activeTimer !== null) {
+                alert('A timer is already running!');
+                return;
+            }
+            
+            initAudio();
+            activeTimer = flightIndex;
+            const warningTime = 2 * 60;
+            const endTime = Date.now() + (minutes * 60 * 1000);
+            
+            const card = document.getElementById(`flight-${flightIndex}`);
+            const timerDisplay = document.getElementById(`timer-${flightIndex}`);
+            const startBtn = document.getElementById(`start-btn-${flightIndex}`);
+            const stopBtn = document.getElementById(`stop-btn-${flightIndex}`);
+            
+            document.querySelectorAll('.flight-card').forEach((c, idx) => {
+                c.style.display = idx === flightIndex ? 'block' : 'none';
+            });
+            
+            card.classList.add('timer-active');
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'block';
+            card.dataset.endTime = endTime;
+            card.dataset.warningTriggered = 'false';
+            
+            const interval = setInterval(() => {
+                const remainingMs = endTime - Date.now();
+                const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = totalSeconds % 60;
+                timerDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')} remaining`;
+                
+                if (totalSeconds <= warningTime && card.dataset.warningTriggered === 'false') {
+                    card.classList.add('timer-warning');
+                    timerDisplay.classList.add('warning');
+                    card.dataset.warningTriggered = 'true';
+                    playWarning();
+                }
+                
+                if (remainingMs <= 0) {
+                    clearInterval(interval);
+                    stopWarning();
+                    playFinal();
+                    alert('TIME UP!');
+                    resetTimer(flightIndex);
+                }
+            }, 100);
+            
+            card.dataset.intervalId = interval;
+        }
+        
+        function stopTimer(flightIndex) {
+            const card = document.getElementById(`flight-${flightIndex}`);
+            clearInterval(card.dataset.intervalId);
+            stopWarning();
+            resetTimer(flightIndex);
+        }
+        
+        function resetTimer(flightIndex) {
+            const card = document.getElementById(`flight-${flightIndex}`);
+            const timerDisplay = document.getElementById(`timer-${flightIndex}`);
+            const startBtn = document.getElementById(`start-btn-${flightIndex}`);
+            const stopBtn = document.getElementById(`stop-btn-${flightIndex}`);
+            
+            document.querySelectorAll('.flight-card').forEach(c => c.style.display = 'block');
+            card.classList.remove('timer-active', 'timer-warning');
+            timerDisplay.classList.remove('warning');
+            timerDisplay.textContent = 'Ready to start';
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            activeTimer = null;
+        }
+        
+        function playWarning() {
+            try {
+                stopWarning();
+                warningOscillator = audioContext.createOscillator();
+                warningGain = audioContext.createGain();
+                warningOscillator.connect(warningGain);
+                warningGain.connect(audioContext.destination);
+                warningOscillator.frequency.value = 800;
+                let time = audioContext.currentTime;
+                for (let i = 0; i < 240; i++) {
+                    warningGain.gain.setValueAtTime(0.3, time);
+                    warningGain.gain.setValueAtTime(0, time + 0.2);
+                    time += 0.5;
+                }
+                warningOscillator.start();
+            } catch (e) {
+                console.error('Warning sound error:', e);
+            }
+        }
+        
+        function stopWarning() {
+            try {
+                if (warningOscillator) {
+                    warningOscillator.stop();
+                    warningOscillator.disconnect();
+                    warningOscillator = null;
+                }
+                if (warningGain) {
+                    warningGain.disconnect();
+                    warningGain = null;
+                }
+            } catch (e) {}
+        }
+        
+        function playFinal() {
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.value = 1000;
+                gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+                osc.start();
+                osc.stop(audioContext.currentTime + 1.5);
+            } catch (e) {}
+        }
+        
+        function updateResultsTitle(count = flightData.length) {
+            document.getElementById('resultsTitle').textContent = `Flight Results (${count})`;
+        }
+        
+        function toggleClearButton(show) {
+            document.getElementById('clearBtn').style.display = show ? 'block' : 'none';
+        }
+        
+        function clearFilters() {
+            document.getElementById('searchQuery').value = '';
+            document.getElementById('daySearch').value = '';
+            displayResults();
+        }
+        
+        initializeApp();
+    </script>
+</body>
+</html>
